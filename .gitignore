@@ -1,5 +1,4 @@
 .env
+*.txt
 __pycache__/
 *.pyc
-*.pyd
-.DS_Store
