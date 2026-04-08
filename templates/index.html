@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI JOB SEARCH AGENT</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #534AB7;
+      --purple-light: #EEEDFE;
+      --purple-dark: #3C3489;
+      --green-light: #EAF3DE;
+      --green-dark: #27500A;
+      --green-mid: #3B6D11;
+      --amber-light: #FAEEDA;
+      --amber-dark: #633806;
+      --red-light: #FCEBEB;
+      --red-dark: #791F1F;
+      --border: #e2e8f0;
+      --bg: #f7f8fc;
+      --bg-card: #ffffff;
+      --text: #1a1a2e;
+      --text-muted: #64748b;
+      --text-hint: #94a3b8;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      text-align: center;
+    }
+    .logo-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--purple);
+    }
+
+    /* ── Top Form ── */
+    .top-form {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 12px;
+    }
+    .form-row1 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .form-row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg-card);
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(83,74,183,0.08);
+    }
+    .field textarea {
+      height: 58px;
+      resize: none;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .divider-label {
+      font-size: 11px;
+      color: var(--text-hint);
+      margin-bottom: 12px;
+      padding-top: 4px;
+    }
+    .run-btn {
+      padding: 9px 24px;
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      height: 38px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .run-btn:hover { background: #4840a0; }
+    .run-btn:active { transform: scale(0.98); }
+    .run-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    /* ── Main Content ── */
+    .content {
+      padding: 24px 32px;
+    }
+
+    /* ── Loading ── */
+    .loading-bar {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .loading-bar.visible { display: flex; }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--purple-light);
+      border-top: 2px solid var(--purple);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results ── */
+    .results {
+      display: none;
+      gap: 20px;
+      flex-direction: column;
+    }
+    .results.visible { display: flex; }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card.top-match {
+      border: 2px solid var(--purple);
+    }
+    .card-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--purple);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .job-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .job-company {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .score-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .score-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--purple);
+    }
+    .score-denom {
+      font-size: 13px;
+      color: var(--text-hint);
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .tag-purple { background: var(--purple-light); color: var(--purple-dark); }
+    .tag-green  { background: var(--green-light);  color: var(--green-mid); }
+    .tag-gray   { background: #f1f5f9; color: var(--text-muted); }
+    .job-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    .view-link {
+      font-size: 12px;
+      color: var(--purple);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .view-link:hover { text-decoration: underline; }
+
+    /* ── Tailored Resume Card ── */
+    .resume-summary {
+      background: #f8f9ff;
+      border: 1px solid #e0deff;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+    .bullets-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+    .bullet-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .bullet-box {
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .bullet-old {
+      background: var(--red-light);
+      color: var(--red-dark);
+    }
+    .bullet-new {
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
+    .bullet-tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+
+    /* ── Reasoning Box ── */
+    .reasoning-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .reasoning-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    /* ── Similar Jobs ── */
+    .other-jobs-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .similar-jobs-heading {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .other-job-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .other-job-row:last-child { border-bottom: none; }
+    .other-job-title { font-size: 13px; font-weight: 500; color: var(--text); }
+    .other-job-company { font-size: 12px; color: var(--text-muted); }
+    .other-job-score {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--purple);
+      background: var(--purple-light);
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .other-job-link {
+      font-size: 11px;
+      color: var(--purple);
+      text-decoration: none;
+      margin-left: 10px;
+    }
+
+    /* ── Error ── */
+    .error-box {
+      display: none;
+      background: var(--red-light);
+      border: 1px solid #f5c6c6;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--red-dark);
+      margin-bottom: 20px;
+    }
+    .error-box.visible { display: block; }
+
+    @media (max-width: 768px) {
+      .form-row1, .form-row2, .results-grid, .bullet-grid { grid-template-columns: 1fr; }
+      .content { padding: 16px; }
+      .top-form { padding: 16px; }
+      .navbar { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="logo">
+    
+    AI JOB SEARCH AGENT
+  </div>
+</nav>
+
+<!-- Top Form -->
+<div class="top-form">
+  <div class="section-label">Candidate Profile</div>
+
+  <div class="form-row1">
+    <div class="field">
+      <label>Skills</label>
+      <input type="text" id="skills" placeholder="e.g. Python, PyTorch, NLP, HuggingFace"
+             value="Python, PyTorch, Machine Learning, SQL, NLP, HuggingFace" />
+    </div>
+    <div class="field">
+      <label>Location</label>
+      <select id="location">
+        <option value="remote">Remote</option>
+        <option value="New York">New York</option>
+        <option value="San Francisco">San Francisco</option>
+        <option value="Seattle">Seattle</option>
+        <option value="Austin">Austin</option>
+        <option value="Boston">Boston</option>
+        <option value="Chicago">Chicago</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Years of Experience</label>
+      <select id="years_of_experience">
+        <option value="1">1 year</option>
+        <option value="2">2 years</option>
+        <option value="3" selected>3 years</option>
+        <option value="4">4 years</option>
+        <option value="5">5 years</option>
+        <option value="7">7 years</option>
+        <option value="10">10+ years</option>
+      </select>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runAgent()">Search</button>
+  </div>
+
+  <div class="divider-label">Resume Content</div>
+
+  <div class="form-row2">
+    <div class="field">
+      <label>Current Summary</label>
+      <textarea id="summary">Machine learning engineer with experience building and deploying models. Familiar with Python and deep learning frameworks. Worked on data pipelines and model evaluation at a mid-size tech company.</textarea>
+    </div>
+    <div class="field">
+      <label>Bullet Point 1</label>
+      <textarea id="bullet1">Worked on machine learning models and helped improve performance</textarea>
+    </div>
+    <div class="field">
+      <label>Bullet Point 2</label>
+      <textarea id="bullet2">Collaborated with team members on various data science projects</textarea>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="content">
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Loading -->
+  <div class="loading-bar" id="loadingBar">
+    <div class="spinner"></div>
+    <span id="loadingText">Fetching live jobs and running AI agent — this takes about 30 seconds...</span>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <!-- Row 1: Tailored Resume + Top Match -->
+    <div class="results-grid">
+
+      <!-- Tailored Resume -->
+      <div class="card" id="resumeCard">
+        <div class="card-label">Tailored Resume</div>
+        <div class="resume-summary" id="resumeSummary"></div>
+        <div class="bullets-label">Bullet Points — Before &amp; After</div>
+        <div class="bullet-grid">
+          <div class="bullet-box bullet-old">
+            <div class="bullet-tag" style="color:#A32D2D;">Before</div>
+            <div id="bullet1Original"></div>
+          </div>
+          <div class="bullet-box bullet-old">
+            <div class="bullet-tag" style="color:#A32D2D;">Before</div>
+            <div id="bullet2Original"></div>
+          </div>
+          <div class="bullet-box bullet-new">
+            <div class="bullet-tag" style="color:#27500A;">After</div>
+            <div id="bullet1Improved"></div>
+          </div>
+          <div class="bullet-box bullet-new">
+            <div class="bullet-tag" style="color:#27500A;">After</div>
+            <div id="bullet2Improved"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Match -->
+      <div class="card top-match" id="topJobCard">
+        <div class="card-label">Top Match</div>
+        <div class="job-title" id="jobTitle"></div>
+        <div class="job-company" id="jobCompany"></div>
+        <div class="score-row">
+          <span class="score-num" id="jobScore"></span>
+          <span class="score-denom">/ 100</span>
+        </div>
+        <div class="tags" id="jobTags"></div>
+        <div class="job-desc" id="jobDesc"></div>
+        <a class="view-link" id="jobLink" href="#" target="_blank">View full job posting →</a>
+      </div>
+
+    </div>
+
+    <!-- Row 2: Similar Jobs -->
+    <div class="other-jobs-card">
+      <div class="similar-jobs-heading">Similar Jobs</div>
+      <div id="otherJobsList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Store original bullets for display
+  let originalBullet1 = "";
+  let originalBullet2 = "";
+
+  async function runAgent() {
+    const btn = document.getElementById("runBtn");
+    const loadingBar = document.getElementById("loadingBar");
+    const results = document.getElementById("results");
+    const errorBox = document.getElementById("errorBox");
+
+    // Save original bullets
+    originalBullet1 = document.getElementById("bullet1").value;
+    originalBullet2 = document.getElementById("bullet2").value;
+
+    // Reset UI
+    btn.disabled = true;
+    btn.textContent = "Searching...";
+    loadingBar.classList.add("visible");
+    results.classList.remove("visible");
+    errorBox.classList.remove("visible");
+
+    const payload = {
+      skills: document.getElementById("skills").value,
+      location: document.getElementById("location").value,
+      years_of_experience: document.getElementById("years_of_experience").value,
+      summary: document.getElementById("summary").value,
+      bullet1: originalBullet1,
+      bullet2: originalBullet2,
+    };
+
+    try {
+      const res = await fetch("/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        throw new Error(json.error || "Agent failed");
+      }
+
+      renderResults(json.data);
+    } catch (err) {
+      errorBox.textContent = "Error: " + err.message;
+      errorBox.classList.add("visible");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Search";
+      loadingBar.classList.remove("visible");
+    }
+  }
+
+  function renderResults(data) {
+    const topJob = data.top_job || {};
+    const rankedJobs = data.ranked_jobs || [];
+    const reasoning = data.final_reasoning || "";
+
+    // ── Top Job Card ──
+    document.getElementById("jobTitle").textContent = topJob["Job Title"] || "N/A";
+    document.getElementById("jobCompany").textContent =
+      (topJob["Company"] || "N/A") + " · " + (topJob["Location"] || "N/A");
+    document.getElementById("jobScore").textContent = topJob["score"] || "N/A";
+    document.getElementById("jobDesc").textContent =
+      (topJob["Job Description"] || "").slice(0, 280) + "...";
+
+    const link = document.getElementById("jobLink");
+    link.href = topJob["URL"] || "#";
+
+    // Tags
+    const tagsEl = document.getElementById("jobTags");
+    tagsEl.innerHTML = "";
+    const skills = (topJob["matched_skills"] || []).slice(0, 5);
+    skills.forEach(s => {
+      const tag = document.createElement("span");
+      tag.className = "tag tag-purple";
+      tag.textContent = s;
+      tagsEl.appendChild(tag);
+    });
+    const locTag = document.createElement("span");
+    locTag.className = "tag tag-green";
+    locTag.textContent = topJob["Location"] || "";
+    tagsEl.appendChild(locTag);
+    const expTag = document.createElement("span");
+    expTag.className = "tag tag-gray";
+    expTag.textContent = (topJob["Years of Experience Required"] || "N/A") + " yrs exp";
+    tagsEl.appendChild(expTag);
+
+    // ── Resume Tailoring ──
+    // Extract tailored summary and bullets from reasoning text
+    const { summary, bullet1, bullet2 } = extractResumeContent(reasoning);
+
+    document.getElementById("resumeSummary").textContent = summary ||
+      "See Claude's reasoning below for the tailored resume summary.";
+    document.getElementById("bullet1Original").textContent = originalBullet1;
+    document.getElementById("bullet2Original").textContent = originalBullet2;
+    document.getElementById("bullet1Improved").textContent = bullet1 ||
+      "See Claude's reasoning below for improved bullet points.";
+    document.getElementById("bullet2Improved").textContent = bullet2 || "";
+
+    // ── Other Jobs ──
+    const otherJobsList = document.getElementById("otherJobsList");
+    otherJobsList.innerHTML = "";
+    const others = rankedJobs.slice(1, 10);
+    others.forEach((job, i) => {
+      const row = document.createElement("div");
+      row.className = "other-job-row";
+      row.innerHTML = `
+        <div>
+          <div class="other-job-title">${job["Job Title"] || "N/A"}</div>
+          <div class="other-job-company">${job["Company"] || "N/A"} · ${job["Location"] || "N/A"}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="other-job-score">${job["score"] || "N/A"}</span>
+          ${job["URL"] ? `<a class="other-job-link" href="${job["URL"]}" target="_blank">View →</a>` : ""}
+        </div>
+      `;
+      otherJobsList.appendChild(row);
+    });
+
+    document.getElementById("results").classList.add("visible");
+    document.getElementById("results").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function extractResumeContent(text) {
+    // Try to extract tailored summary (after "Tailored Resume Summary" or similar heading)
+    let summary = "";
+    let bullet1 = "";
+    let bullet2 = "";
+
+    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+
+    let inSummary = false;
+    let improvedBullets = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lower = line.toLowerCase();
+
+      // Detect summary section
+      if (lower.includes("tailored") && lower.includes("summary")) {
+        inSummary = true;
+        continue;
+      }
+
+      if (inSummary && !summary && line.length > 40 && !line.startsWith("#") && !line.startsWith("*")) {
+        summary = line.replace(/^\*+|\*+$/g, "").trim();
+        inSummary = false;
+      }
+
+      // Detect improved bullets (lines starting with "Improved:" or "**Improved**" etc)
+      if (lower.includes("improved") && line.includes(":") && line.length > 30) {
+        const content = line.split(":").slice(1).join(":").replace(/^\*+|\*+$/g, "").trim();
+        if (content.length > 20) improvedBullets.push(content);
+      }
+
+      // Also catch bullet lines that follow "Improved" headers
+      if ((lower.startsWith("- ") || lower.startsWith("• ")) && improvedBullets.length < 2) {
+        const prev = lines[i - 1] || "";
+        if (prev.toLowerCase().includes("improved") || prev.toLowerCase().includes("after")) {
+          improvedBullets.push(line.replace(/^[-•]\s*/, "").replace(/^\*+|\*+$/g, "").trim());
+        }
+      }
+    }
+
+    if (improvedBullets.length >= 1) bullet1 = improvedBullets[0];
+    if (improvedBullets.length >= 2) bullet2 = improvedBullets[1];
+
+    return { summary, bullet1, bullet2 };
+  }
+</script>
+
+</body>
+</html>
